@@ -9,6 +9,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./ci_exp
+
     steps:
       - uses: actions/checkout@v4
       
