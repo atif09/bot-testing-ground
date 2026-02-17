@@ -54,8 +54,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.event.workflow_run.id }}
+          REPO: ${{ github.repository }}
         run: |
-          gh run view $RUN_ID --log-failed > failed_logs.txt
+          gh run view $RUN_ID --repo $REPO --log-failed > failed_logs.txt
           
       - name: Debug - Verify File Content
         run: cat pr_code/ci_exp/file.py
