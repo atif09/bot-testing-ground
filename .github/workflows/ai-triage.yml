@@ -23,6 +23,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
+          ref: ${{ github.event.workflow_run.head_sha }}
       
       - name: Install Tools
         run: |
@@ -45,7 +46,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
-          # Fetch logs for the failed run. --log-failed only grabs failed steps
           gh run view $RUN_ID --log-failed > failed_logs.txt
           
       - name: Pack Context

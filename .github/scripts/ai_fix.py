@@ -35,7 +35,7 @@ def main():
        - If the function logic is wrong, tell them to fix the code.
 
     **Response Format:**
-    - Start with a friendly greeting to the @contributor.
+    - Start with a friendly greeting.
     - clearly state WHAT failed.
     - Provide the "Remediation" step (command to run or code to change).
     - Use Markdown.
