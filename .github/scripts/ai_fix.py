@@ -1,6 +1,6 @@
 import os
 import xml.etree.ElementTree as ET
-import google.generativeai as genai
+from google import genai
 
 def get_error():
     try:
@@ -18,22 +18,28 @@ def main():
     if not api_key:
         print("Skipping: No API Key found.")
         return
+    client = genai.Client(api_key=api_key)
 
-    genai.configure(api_key=api_key)
-    
     error_log = get_error()
-    with open("repo_context.xml", "r") as f:
-        context = f.read()
+    try:
+        with open("repo_context.xml", "r") as f:
+            context = f.read()
+    except FileNotFoundError:
+        context = "Context missing."
 
     prompt = f"""
     Fix this failing test.
     ERROR: {error_log}
     CODE: {context}
     """
-
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    response = model.generate_content(prompt)
-    print(f"## AI Fix\n\n{response.text}")
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.0-flash', 
+            contents=prompt
+        )
+        print(f"## AI Fix\n\n{response.text}")
+    except Exception as e:
+        print(f"AI Generation Failed: {e}")
 
 if __name__ == "__main__":
     main()

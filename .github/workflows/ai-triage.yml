@@ -27,7 +27,7 @@ jobs:
       
       - name: Install Tools
         run: |
-          pip install google-generativeai
+          pip install google-genai
           npm install -g repomix
 
       - name: Download Artifacts
