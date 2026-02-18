@@ -2,7 +2,7 @@ name: AI Triage (Caller)
 
 on:
   workflow_run:
-    workflows: ["CI Experiment"]
+    workflows: ["CI Experiment (Fail)"]
     types:
       - completed
 
@@ -12,28 +12,40 @@ permissions:
   contents: read
 
 jobs:
-  prepare:
+  find-pr:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     outputs:
       pr_number: ${{ steps.pr.outputs.number }}
     steps:
-      - name: Download PR Number Artifact
-        uses: actions/download-artifact@v4
-        with:
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: failure-evidence
-          path: .
-      - id: pr
-        run: echo "number=$(cat pr_number.txt)" >> $GITHUB_OUTPUT
+      - name: Find PR Number
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
+          if [ -n "$PR_NUMBER" ]; then
+            echo "Found PR #$PR_NUMBER from workflow payload."
+            echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          echo "Payload empty. Searching for PR by Commit SHA ($HEAD_SHA)..."
+          PR_NUMBER=$(gh pr list --search "$HEAD_SHA" --state open --json number --jq '.[0].number')
+          if [ -n "$PR_NUMBER" ]; then
+             echo "Found PR #$PR_NUMBER using Commit SHA."
+             echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+             exit 0
+          fi
+          echo "::warning::No open PR found. This was likely a push to master."
+          exit 0
 
   call-triage-bot:
-    needs: prepare
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
-    uses: openwisp/openwisp-utils/.github/workflows/reusable-ai-triage.yml@issues/524-ci-failure-bot
+    needs: find-pr
+    if: ${{ needs.find-pr.outputs.pr_number != '' }}
+    uses: openwisp/openwisp-utils/.github/workflows/reusable-ai-triage.yml@<YOUR_BRANCH_NAME>
     with:
-      pr_number: ${{ needs.prepare.outputs.pr_number }}
+      pr_number: ${{ needs.find-pr.outputs.pr_number }}
       head_sha: ${{ github.event.workflow_run.head_sha }}
       head_repo: ${{ github.event.workflow_run.head_repository.full_name }}
       run_id: ${{ github.event.workflow_run.id }}

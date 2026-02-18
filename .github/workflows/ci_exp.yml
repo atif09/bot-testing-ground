@@ -1,30 +1,15 @@
-name: CI Experiment
+name: CI Experiment (Fail)
 
 on:
-  pull_request:
   push:
-    branches: [master, main]
+    paths:
+      - 'ci_exp/**'
+  pull_request:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Save PR Number
-        if: always()
-        run: |
-          echo "${{ github.event.number }}" > pr_number.txt
-          
-      - name: Upload PR Number
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: failure-evidence
-          path: pr_number.txt
-
-      - name: Run Script
-        run: |
-          echo "Running critical tests..."
-          python ci_exp/test_file.py
+      - uses: actions/checkout@v4
+      - name: Run Broken Script
+        run: python ci_exp/test_file.py
